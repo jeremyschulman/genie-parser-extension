@@ -7,7 +7,7 @@ The specific parser is to support the calls:
     "show interface transceiver"
     'show interface {interface} transceiver'
 
-The {interface} parameter can be any form that is accepted by the NXOS cli.  This includes
+The {interface} parameter can be any form that is accepted by the NXOS CLI.  This includes
 ranges, for example:
 
     In [3]: dev.parse('show interface Ethernet1/1 - 2 transceiver')
@@ -31,6 +31,7 @@ https://developer.cisco.com/docs/genie-parsergen/
 """
 
 import sys
+import re
 
 from genie import parsergen as pg
 from djinnbob.parser.extend import add_parser
@@ -66,11 +67,6 @@ class ShowInterfaceTransceiver(ShowInterfaceTransceiverSchema):
           'serial_number': 'FNS1947****'}}
 
     """
-    cli_command = [
-        'show interface transceiver',
-        'show interface {interface} transceiver'
-    ]
-
     OS = 'nxos'
     MARKUP_PREFIX = 'if-xcvr'
     MARKUP_CONTENT = """
@@ -109,6 +105,11 @@ XI<ifname>XEthernet2/2
                     'vendor', 'part_number', 'serial_number']
 
     pg.extend_markup(MARKUP_CONTENT)
+
+    # The following defines a function `find_interface_blocks` that is used to
+    # locate the start of each interface within the CLI output.
+
+    find_interface_blocks = re.compile(r"^(\S+)[\r]?$", re.M).finditer
 
     def cli(self, interface=None, output=None, **kwargs):
 
@@ -168,11 +169,6 @@ XI<ifname>XEthernet2/2
                                   attrvalpairs=find_attrs.items(),
                                   refresh_cache=False)
 
-            # always create an entry for each interface, even if no transceiver
-            # exists.
-
-            schema_output[if_name] = if_schema_data = {}
-
             ok = parser.parse()
             if not ok:
                 continue
@@ -186,6 +182,10 @@ XI<ifname>XEthernet2/2
             exists = parsed_attrs.get(f'{self.MARKUP_PREFIX}.present', '') == 'present'
             if not exists:
                 continue
+
+            # only create an entry for an interface if a transceiver exists
+
+            schema_output[if_name] = if_schema_data = {}
 
             # a transceiver exists, so copy the data out from parsergen into
             # the return schema dictionary variable.
