@@ -1,1 +1,1 @@
-import djinn.parser
+import djinnbob.parser

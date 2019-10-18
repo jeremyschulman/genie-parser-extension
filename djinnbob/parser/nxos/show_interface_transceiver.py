@@ -33,8 +33,8 @@ https://developer.cisco.com/docs/genie-parsergen/
 import sys
 
 from genie import parsergen as pg
-from djinn.parser.extend import add_parser
-from djinn.parser.schemas.show_interface_transceiver import ShowInterfaceTransceiverSchema
+from djinnbob.parser.extend import add_parser
+from djinnbob.parser.schemas.show_interface_transceiver import ShowInterfaceTransceiverSchema
 
 
 __all__ = ['ShowInterfaceTransceiver']
