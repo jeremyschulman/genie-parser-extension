@@ -15,9 +15,25 @@ OS = Path(__file__).parent.name
 class ShowInterfaceTransceiver(ShowInterfaceTransceiverSchema):
     """
     This Genie parser is used to find an extract the interface transceiver
-    inventory information, as defined in the Schema.  This parsing requires a
-    two step process.  The first is to get the list of interfaces that have
-    transceivers using the 'show interface <interface>? transceiver' command.
+    inventory information, as defined in the Schema.  The resulting parsed
+    dictionary looks like this:
+
+        {
+           "Te1/1/1": {
+              "type": "SFP-10GBase-LR",
+              "part_number": "SFP-10G-LR-S",
+              "serial_number": "FNS21440123"
+           },
+           "Te2/1/2": {
+              "type": "SFP-10GBase-LR",
+              "part_number": "SFP-10G-LR-S",
+              "serial_number": "FNS21450123"
+           }
+        }
+
+    This parsing requires a two step process.  The first is to get the list of
+    interfaces that have transceivers using the 'show interface <interface>?
+    transceiver' command.
 
     Example CLI output:
     -------------------
@@ -44,10 +60,10 @@ class ShowInterfaceTransceiver(ShowInterfaceTransceiverSchema):
         PID: SFP-10G-LR-S        , VID: V01  , SN: FNS21440xxx
 
         NAME: "Switch 2", DESCR: "C9300-24P"
-        PID: C9300-24P         , VID: V02  , SN: FCW2303Gxxx
+        PID: C9300-24P         , VID: V02  , SN: FCW2303G123
 
         NAME: "StackPort2/1", DESCR: "StackPort2/1"
-        PID: STACK-T1-50CM     , VID: V01  , SN: MOC2248Axxx
+        PID: STACK-T1-50CM     , VID: V01  , SN: MOC2248A123
 
     To extract the information needed, the oper_fill method will be used,
     looping over each of the Port items.
@@ -79,6 +95,9 @@ class ShowInterfaceTransceiver(ShowInterfaceTransceiverSchema):
         if_names = list(oper_res.entries)
         if not if_names:
             return schema_output
+
+        # perform second command to get the inventory CLI output, and then
+        # parse for each interface name found from the first table parse.
 
         cli_inventory = self.device.execute("show inventory")
         for if_name in if_names:
