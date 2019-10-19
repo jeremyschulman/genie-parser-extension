@@ -1,5 +1,6 @@
 import sys
 from copy import copy
+from pathlib import Path
 
 from genie import parsergen as pg
 from djinnbob.parser.extend import add_parser
@@ -8,47 +9,7 @@ from djinnbob.parser.schemas.show_interface_transceiver import ShowInterfaceTran
 
 __all__ = ['ShowInterfaceTransceiver']
 
-OS = 'iosxe'
-
-MARKUP_PREFIX = 'if-xcvr'
-
-MARKUP_CONTENT = """
-OS: """ + OS.upper() + """
-CMD: SHOW_INTF_<NAME>_XCVRS
-SHOWCMD: show interface {ifname} transceiver
-PREFIX: """ + MARKUP_PREFIX + """
-
-ACTUAL:
-NAME: "Te1/1/1", DESCR: "SFP-10GBase-LR"
-PID: SFP-10G-LR-S        , VID: V01  , SN: FNS21440xxx
-
-
-MARKUP:
-NAME: "XQ<ifname>XTe1/1/1", DESCR: "XQ<type>XSFP-10GBase-LR"
-PID: XS<part_number>XSFP-10G-LR-SX        , VID: V01  , SN: XS<serial_number>XFNS214401111
-
-"""
-
-pg.extend_markup(MARKUP_CONTENT)
-
-MARKUP_LOOKUP = {f'{MARKUP_PREFIX}.{attr}': None
-                 for attr in ['ifname', 'type', 'part_number', 'serial_number']}
-
-
-def parse_inventory_for_interface(ifname, inventory_output):
-    lkup = copy(MARKUP_LOOKUP)
-    lkup[f'{MARKUP_PREFIX}.ifname'] = ifname
-
-    parser = pg.oper_fill(device_os=OS,
-                          device_output=inventory_output,
-                          show_command=('SHOW_INTF_<NAME>_XCVRS', [], {
-                              'ifname': ifname
-                          }),
-                          attrvalpairs=lkup.items(),
-                          refresh_cache=False)
-
-    ok = parser.parse()
-    return None if not ok else pg.ext_dictio['device_name']
+OS = Path(__file__).parent.name
 
 
 class ShowInterfaceTransceiver(ShowInterfaceTransceiverSchema):
@@ -77,7 +38,7 @@ class ShowInterfaceTransceiver(ShowInterfaceTransceiverSchema):
     command, and the resulting data does not include transceivers (?ugh?). But we can
     use the Port values and the parsegen oper_fill function to get what is needed.
 
-    Exmaple CLI output
+    Example CLI output
     -----------------
         NAME: "Te1/1/1", DESCR: "SFP-10GBase-LR"
         PID: SFP-10G-LR-S        , VID: V01  , SN: FNS21440xxx
@@ -127,13 +88,66 @@ class ShowInterfaceTransceiver(ShowInterfaceTransceiverSchema):
             if not data:
                 continue
 
-            if_schema_data['vendor'] = 'n/a'
             if_schema_data['type'] = data[f'{MARKUP_PREFIX}.type']
+            # vendor is not supported on this platform?
             if_schema_data['part_number'] = data[f'{MARKUP_PREFIX}.part_number']
             if_schema_data['serial_number'] = data[f'{MARKUP_PREFIX}.serial_number']
 
         return schema_output
 
+
+# -----------------------------------------------------------------------------
+#
+#                  Genie parsergen markup based parsing
+#
+# -----------------------------------------------------------------------------
+
+MARKUP_PREFIX = 'if-xcvr'
+
+MARKUP_CONTENT = """
+OS: """ + OS.upper() + """
+CMD: SHOW_INTF_<NAME>_XCVRS
+SHOWCMD: show interface {ifname} transceiver
+PREFIX: """ + MARKUP_PREFIX + """
+
+ACTUAL:
+NAME: "Te1/1/1", DESCR: "SFP-10GBase-LR"
+PID: SFP-10G-LR-S        , VID: V01  , SN: FNS21440xxx
+
+
+MARKUP:
+NAME: "XQ<ifname>XTe1/1/1", DESCR: "XQ<type>XSFP-10GBase-LR"
+PID: XS<part_number>XSFP-10G-LR-SX        , VID: V01  , SN: XS<serial_number>XFNS214401111
+
+"""
+
+pg.extend_markup(MARKUP_CONTENT)
+
+MARKUP_LOOKUP = {f'{MARKUP_PREFIX}.{attr}': None
+                 for attr in ['ifname', 'type', 'part_number', 'serial_number']}
+
+
+def parse_inventory_for_interface(ifname, inventory_output):
+    lkup = copy(MARKUP_LOOKUP)
+    lkup[f'{MARKUP_PREFIX}.ifname'] = ifname
+
+    parser = pg.oper_fill(device_os=OS,
+                          device_output=inventory_output,
+                          show_command=('SHOW_INTF_<NAME>_XCVRS', [], {
+                              'ifname': ifname
+                          }),
+                          attrvalpairs=lkup.items(),
+                          refresh_cache=False)
+
+    ok = parser.parse()
+    return None if not ok else pg.ext_dictio['device_name']
+
+
+# -----------------------------------------------------------------------------
+#
+#                  Dynamically extend genie parsers
+#
+# -----------------------------------------------------------------------------
 
 # This call dynamically add this parser to the parsegen framework; it must be
 # after the the class definition.
