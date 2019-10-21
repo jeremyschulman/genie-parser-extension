@@ -10,7 +10,7 @@ parser framework.
 from genie.libs.parser.utils.common import parser_data
 
 
-def add_parser(mod, package, parser, os_name):
+def add_parser(mod, parser, os_name):
     """
     Dynamically add the parser class to the Genie parser framework.
 
@@ -21,15 +21,14 @@ def add_parser(mod, package, parser, os_name):
     mod : module
         The module where the parser is located
 
-    package : str
-        The package name where the module is located
-
     parser : class
         The parser class that implements a MetaParser
 
     os_name : str
         The NOS name for which the parser is supported, for example "nxos"
     """
+    package = mod.__package__
+
     for cmd in parser.cli_command:
         if cmd not in parser_data:
             parser_data[cmd] = {}

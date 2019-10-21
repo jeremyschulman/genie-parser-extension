@@ -236,5 +236,4 @@ def parse_interface_block(ifname, cli_text):
 # This call dynamically add this parser to the parsegen framework; it must be
 # after the the class definition.
 
-add_parser(mod=sys.modules[__name__], package=__package__,
-           os_name=OS, parser=ShowInterfaceTransceiver)
+add_parser(mod=sys.modules[__name__], os_name=OS, parser=ShowInterfaceTransceiver)
