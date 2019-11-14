@@ -22,4 +22,9 @@ setup(
     author='Jeremy Schulman',
     packages=find_packages(),
     install_requires=requirements(),
+    entry_points={
+        'genie.libs.parser': [
+            f"{package_name} = {package_name}:add_my_parsers"
+        ]
+    }
 )

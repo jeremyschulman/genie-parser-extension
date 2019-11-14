@@ -30,12 +30,10 @@ References
 https://developer.cisco.com/docs/genie-parsergen/
 """
 
-import sys
 import re
 from copy import copy
 
 from genie import parsergen as pg
-from djinnbob.parser.extend import add_parser
 from djinnbob.parser.schemas.show_interface_transceiver import ShowInterfaceTransceiverSchema
 
 
@@ -226,14 +224,3 @@ def parse_interface_block(ifname, cli_text):
 
     return parsed_attrs if exists else None
 
-
-# -----------------------------------------------------------------------------
-#
-#                  Dynamically extend genie parsers
-#
-# -----------------------------------------------------------------------------
-
-# This call dynamically add this parser to the parsegen framework; it must be
-# after the the class definition.
-
-add_parser(mod=sys.modules[__name__], os_name=OS, parser=ShowInterfaceTransceiver)
